@@ -36,8 +36,6 @@ class Trajectory(object):
         """
         step = currenttime/timeinterval
         :return:
-        author: weiwei
-        date: 20200327
         """
         step_array = np.vstack([step ** 3, step ** 2, step, np.ones_like(step)])
         spd_step_array = np.vstack([3 * step ** 2, 2 * step, step, np.zeros_like(step)])
@@ -50,8 +48,6 @@ class Trajectory(object):
         """
         step = currenttime/timeinterval
         :return:
-        author: weiwei
-        date: 20200327
         """
         conf_step_array = np.vstack([step ** 5, step ** 4, step ** 3, step ** 2, step, np.ones_like(step)])
         spd_step_array = np.vstack(
@@ -67,8 +63,6 @@ class Trajectory(object):
         change interpolation method
         :param name: 'cubic' or 'quintic'
         :return:
-        author: weiwei
-        date: 20210331
         """
         if method == "cubic":
             self.fit = self._cubic_coeffs
@@ -85,8 +79,6 @@ class Trajectory(object):
         :param control_frequency: the program will sample interval_time/control_frequency confs
         :param interval_time: time to move between adjacent joints
         :return:
-        author: weiwei
-        date: 20200328
         """
         path = np.array(path)
         passing_conf_list = []

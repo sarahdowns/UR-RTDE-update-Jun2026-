@@ -1,7 +1,7 @@
 """
 Python library to control an UR robot through its TCP/IP interface
-Documentation from universal robots:
-http://support.universal-robots.com/URRobot/RemoteAccess
+
+
 """
 
 import logging

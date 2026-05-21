@@ -1,7 +1,6 @@
 def driverProg():
     # slave urscript for synchonized dual-arm motion
-    # author: weiwei
-    # date: 20210405osaka
+   
 
 	SERVO_IDLE = 0
 	SERVO_RUNNING = 1
@@ -86,7 +85,7 @@ def driverProg():
         if conf_counter == 65534:
             break
         end
-        if conf_counter - previous_conf_counter == 1:
+        if conf_counter != previous_conf_counter:
             # base
             base_l_value = modbus_get_signal_status("base_l", False)
             base_u_value = modbus_get_signal_status("base_u", False)
