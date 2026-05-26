@@ -1,4 +1,5 @@
 # Author: Sarah Downs
+# File name: detect_tennisball_ONLY.py
 # This script captures the tennis ball's 3D position (X, Y, Z) once every "interval" (seconds) for "duration" using a 
 # ZED camera. The output is saved to a CSV file for later use.
 
@@ -15,7 +16,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 CAPTURE_INTERVAL = 1.0     # seconds
-TOTAL_DURATION = 4000.0    # seconds
+TOTAL_DURATION = 60.0     # seconds
 
 def detect_tennis_ball_center(hsv_image):
     lower = np.array([38, 140, 140])
@@ -53,13 +54,13 @@ def capture_tennis_ball_xyz():
     point_cloud = sl.Mat()
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"tennis_ball_xyz_{timestamp}.csv"
+    filename = f"tb_camxyz_{timestamp}.csv"
 
     start_time = time.time()
     last_capture_time = 0
 
     print("[INFO] Capturing tennis ball XYZ data...")
-    print("[INFO] Duration: 60 seconds | Interval: 2 seconds")
+    print("[INFO] Duration: 10 minutes | Interval: 1 second")
 
     with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)
@@ -73,9 +74,10 @@ def capture_tennis_ball_xyz():
             zed.retrieve_image(image_zed, sl.VIEW.LEFT)
             zed.retrieve_measure(point_cloud, sl.MEASURE.XYZ)
 
-            frame = image_zed.get_data()
+            frame_bgra = image_zed.get_data()
+            frame = cv2.cvtColor(frame_bgra, cv2.COLOR_BGRA2BGR)
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
+            
             cx, cy, contour = detect_tennis_ball_center(hsv)
 
             current_time = time.time()
@@ -119,7 +121,7 @@ def capture_tennis_ball_xyz():
     print(f"[INFO] Finished. Data saved to: {filename}")
     
     # ==============================
-    # Monte Carlo Visualization
+    # Tennis Ball Detection Visualization
     # ==============================
 
     if len(ball_points) > 0:
@@ -140,14 +142,14 @@ def capture_tennis_ball_xyz():
             color="green", s=60, label="Mean"
         )
 
-        ax.set_title("Monte Carlo Scatter: Tennis Ball Position (Camera Frame)")
+        ax.set_title("Cam Scatter: Tennis Ball Position (Camera Frame)")
         ax.set_xlabel("X (m)")
         ax.set_ylabel("Y (m)")
         ax.set_zlabel("Z (m)")
         ax.legend()
 
         plt.tight_layout()
-        plt.savefig("monte_carlo_xyz.png", dpi=300)
+        plt.savefig("tb_camxyz.png", dpi=300)
         plt.close()
 
 
@@ -170,7 +172,7 @@ def capture_tennis_ball_xyz():
         axes[2].set_title("Y vs Z")
 
         plt.tight_layout()
-        plt.savefig("monte_carlo_xyz_2D.png", dpi=300)
+        plt.savefig("tb_camxyz_2D.png", dpi=300)
         plt.close()
 
 

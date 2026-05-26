@@ -62,8 +62,12 @@ def detect_tennis_ball_and_log():
             if zed.grab(runtime_params) == sl.ERROR_CODE.SUCCESS:
                 zed.retrieve_image(image_zed, sl.VIEW.LEFT)
                 zed.retrieve_measure(point_cloud, sl.MEASURE.XYZ)
+                
+                #frame = image_zed.get_data()
+                #hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-                frame = image_zed.get_data()
+                frame_bgra = image_zed.get_data()
+                frame = cv2.cvtColor(frame_bgra, cv2.COLOR_BGRA2BGR)
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
                 cx, cy, contour = detect_tennis_ball_center(hsv)

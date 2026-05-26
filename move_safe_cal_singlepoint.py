@@ -5,7 +5,7 @@ import time
 import os
 from spatialmath import SE3
 
-#DO NOT RUNN
+#DO NOT RUN -----------------------------------------------------------------
 
 # Import your custom safe controller and local gripper driver
 from move_xyz_safe import UR5eSafeController

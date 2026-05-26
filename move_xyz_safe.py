@@ -15,11 +15,13 @@ class UR5eSafeController:
         self.ip = ip
         self.rtde_c = RTDEControl(ip)
         self.rtde_r = RTDEReceive(ip)
+        active_tcp = self.rtde_c.getTCPOffset()
         
-        # Update the last link (d6) to include the gripper length
+        # Update the last link (d6) to include the gripper length. Check configuration on teach pendant
         # tool_offset = 0.23 		# meters RG2
-        tool_offset = 0.30 		# meters RG6
-        total_d6 = 0.0996 + tool_offset # Table d6 is 0.0996m
+        # tool_offset = 0.30 		# meters RG6
+        print(f"[INIT] Dynamic Tool Offset Extracted: Z = {active_tcp[2]:.4f} m")
+        # total_d6 = 0.0996 + tool_offset # Table d6 is 0.0996m
         
         self.robot = rtb.DHRobot([
             # alpha, a, d
@@ -28,19 +30,23 @@ class UR5eSafeController:
             rtb.RevoluteDH(alpha=0,        a=-0.3922, d=0),     
             rtb.RevoluteDH(alpha=np.pi/2,  a=0,       d=0.1333), 
             rtb.RevoluteDH(alpha=-np.pi/2, a=0,       d=0.0997), 
-            rtb.RevoluteDH(alpha=0,        a=0,       d=total_d6)
+            rtb.RevoluteDH(alpha=0,        a=0,       d=0.0996)
         ], name="UR5_Custom_Match")  # mdh to use modified DH
         
-        # Apply 45-degree base tilt relative to gravity (-45 for 5.4)
+        # Apply 45-degree base tilt relative to gravity (-45 for 192.168.5.4) and configured offset
         self.robot.base = SE3.Ry(np.deg2rad(45))
+        self.robot.tool = SE3(active_tcp[0], active_tcp[1], active_tcp[2]) * SE3.RPY(active_tcp[3], active_tcp[4], active_tcp[5])
 
-    def move_to_xyz_safe(self, x, y, z, visualize=True, speed=0.3, acceleration=1.5, pitch_deg=180):
+    def move_to_xyz_safe(self, x, y, z, visualize=True, speed=0.3, acceleration=1.5, roll_deg=0, pitch_deg=0, yaw_deg=0):
         home_q = self.rtde_r.getActualQ()
         
-        # We convert the degrees to radians, allowing you to tilt the gripper
-        # pitch_deg = 180 results in the previous straight-down pose (np.pi)
-        pitch_rad = np.deg2rad(pitch_deg)
-        T_target = SE3(x, y, z) * SE3.RPY(0, pitch_rad, 0)
+        # Convert all degrees to radians for full 3D spatial rotation
+        r_rad = np.deg2rad(roll_deg)
+        p_rad = np.deg2rad(pitch_deg)
+        y_rad = np.deg2rad(yaw_deg)
+        
+        # SE3.RPY applies rotations in Roll (X), Pitch (Y), Yaw (Z)
+        T_target = SE3(x, y, z) * SE3.RPY(r_rad, p_rad, y_rad)
         
         # Forward-extended seed to prevent 'wrapped' configurations
         safe_seed = [0, -np.pi/3, -np.pi/2, -np.pi/2, np.pi/2, 0]
@@ -50,7 +56,7 @@ class UR5eSafeController:
         # 1.0 = Strict requirement, 0.1 = Flexible/Allowed to tilt
         W = np.array([1.0, 1.0, 1.0, 0.1, 0.1, 0.1])
         
-        sol = self.robot.ikine_LM(T_target, q0=safe_seed, mask=W)	# Solve Inverse Kinematics with the mask
+        sol = self.robot.ikine_LM(T_target, q0=home_q, mask=W)	# Solve Inverse Kinematics with the mask
 
         if sol.success:
             # Check for Elbow Safety (Joint 3)
@@ -65,6 +71,7 @@ class UR5eSafeController:
             print(f"--- IK Success ---")
             print(f"Position Error: {pos_error*1000:.2f} mm")
             print(f"Joints (deg): {np.rad2deg(sol.q).round(1)}")
+            #print(f"TCP (cm): X: {achieved_pose[0]*100:.1f}, Y: {achieved_pose[1]*100:.1f}, Z: {achieved_pose[2]*100:.1f}")
 
             if visualize:
                 print("[VISUAL] Confirm the path in the plot window.")

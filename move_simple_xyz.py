@@ -5,24 +5,12 @@ import numpy as np
 import roboticstoolbox as rtb
 from spatialmath import SE3
 from rtde_control import RTDEControlInterface as RTDEControl
-from rtde_receive import RTDEReceiveInterface as RTDEReceive
+from rtde_receive import RTDEReceiveInterface as RTDEReceiveS
 
 # --- 1. Configuration ---
 ip = "192.168.5.5"
 rtde_c = RTDEControl(ip)
 rtde_r = RTDEReceive(ip)
-
-# --- 2. Define UR5e Model with Safety Constraints ---
-# Values for 'a' and 'd' are sourced from the UR5e technical specifications [cite: 105, 106, 109, 110, 112]
-# Joint working ranges are ±360° (±np.pi*2) 
-# robot = rtb.DHRobot([
-#     rtb.RevoluteDH(d=0.1625, a=0,      alpha=np.pi/2,  qlim=[-np.pi, np.pi]),
-#     rtb.RevoluteDH(d=0,      a=-0.425,  alpha=0,       qlim=[-np.pi, 0]),     # Limit shoulder for forward-facing incline
-#     rtb.RevoluteDH(d=0,      a=-0.3922, alpha=0,       qlim=[-np.pi, np.pi]), 
-#     rtb.RevoluteDH(d=0.1333, a=0,      alpha=np.pi/2,  qlim=[-np.pi, np.pi]),
-#     rtb.RevoluteDH(d=0.0997, a=0,      alpha=-np.pi/2, qlim=[-np.pi, np.pi]),
-#     rtb.RevoluteDH(d=0.0996, a=0,      alpha=0,        qlim=[-np.pi, np.pi])
-# ], name="UR5e_Safe")
 
 # Update the last link (d6) to include the gripper length
 tool_offset= 0
