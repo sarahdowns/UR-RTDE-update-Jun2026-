@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import roboticstoolbox as rtb		# Corke toolbox
 import socket
+import matplotlib.pyplot as plt
 from spatialmath import SE3
 from rtde_control import RTDEControlInterface as RTDEControl
 from rtde_receive import RTDEReceiveInterface as RTDEReceive
@@ -37,8 +38,10 @@ class UR5eSafeController:
         self.robot.base = SE3.Ry(np.deg2rad(45))
         self.robot.tool = SE3(active_tcp[0], active_tcp[1], active_tcp[2]) * SE3.RPY(active_tcp[3], active_tcp[4], active_tcp[5])
 
-    def move_to_xyz_safe(self, x, y, z, visualize=True, speed=0.3, acceleration=1.5, roll_deg=0, pitch_deg=0, yaw_deg=0):
+    def move_to_xyz_safe(self, x, y, z, visualize=True, speed=0.15, acceleration=1, roll_deg=0, pitch_deg=180, yaw_deg=0, ask_user=True, async_move=False, custom_seed=None):
+        # Extract current joints to seed the IK solver dynamically (prevents configuration flipping)
         home_q = self.rtde_r.getActualQ()
+        seed = custom_seed if custom_seed is not None else home_q
         
         # Convert all degrees to radians for full 3D spatial rotation
         r_rad = np.deg2rad(roll_deg)
@@ -48,15 +51,13 @@ class UR5eSafeController:
         # SE3.RPY applies rotations in Roll (X), Pitch (Y), Yaw (Z)
         T_target = SE3(x, y, z) * SE3.RPY(r_rad, p_rad, y_rad)
         
-        # Forward-extended seed to prevent 'wrapped' configurations
-        safe_seed = [0, -np.pi/3, -np.pi/2, -np.pi/2, np.pi/2, 0]
-        
         # --- MASKING ---
         # Weight mask: [X, Y, Z, Roll, Pitch, Yaw]
         # 1.0 = Strict requirement, 0.1 = Flexible/Allowed to tilt
         W = np.array([1.0, 1.0, 1.0, 0.1, 0.1, 0.1])
         
-        sol = self.robot.ikine_LM(T_target, q0=home_q, mask=W)	# Solve Inverse Kinematics with the mask
+        # Pass 'home_q' to force the solver to find the closest posture
+        sol = self.robot.ikine_LM(T_target, q0=seed, mask=W) 
 
         if sol.success:
             # Check for Elbow Safety (Joint 3)
@@ -65,24 +66,36 @@ class UR5eSafeController:
                 return False
 
             # Display the actual achieved pose vs target
-            achieved_pose = self.robot.fkine(sol.q)			# Forward Kinematics
+            achieved_pose = self.robot.fkine(sol.q)            
             pos_error = np.linalg.norm(achieved_pose.t - T_target.t)
             
-            print(f"--- IK Success ---")
-            print(f"Position Error: {pos_error*1000:.2f} mm")
-            print(f"Joints (deg): {np.rad2deg(sol.q).round(1)}")
-            #print(f"TCP (cm): X: {achieved_pose[0]*100:.1f}, Y: {achieved_pose[1]*100:.1f}, Z: {achieved_pose[2]*100:.1f}")
+            if ask_user:
+                print(f"--- IK Success ---")
+                print(f"Position Error: {pos_error*1000:.2f} mm")
+                print(f"Joints (deg): {np.rad2deg(sol.q).round(1)}")
 
-            if visualize:
+            if visualize and ask_user:
                 print("[VISUAL] Confirm the path in the plot window.")
-                self.robot.plot(sol.q, block=True)			# Corke's built in visulaization
+                env = self.robot.plot(sol.q, block=False)  
+               
+                env.ax.set_xlabel('X (meters)', fontweight='bold')
+                env.ax.set_ylabel('Y (meters)', fontweight='bold')
+                env.ax.set_zlabel('Z (meters)', fontweight='bold')    
+                env.ax.set_title('UR5e Target Configuration', pad=20)
+                
+                plt.show()           
             
-            if input(f"Move to ({x:.3f}, {y:.3f}, {z:.3f})? (y/n): ").lower() == 'y':
-                self.rtde_c.moveJ(sol.q, speed, acceleration)
+            # If ask_user is False, it bypasses the prompt and moves immediately
+            if not ask_user or input(f"Move to ({x:.3f}, {y:.3f}, {z:.3f})? (y/n): ").lower() == 'y':
+                # ur_rtde uses the 'asynchronous' keyword
+                self.rtde_c.moveJ(sol.q, speed, acceleration, asynchronous=async_move)
                 return True
+            else:
+                return False
         else:
             dist = np.linalg.norm([x, y, z])
-            print(f"[ERROR] Reach unreachable even with tilt. Dist: {dist:.3f}m")
+            print(f"[ERROR] Target unreachable even with tilt. Dist: {dist:.3f}m")
+            return False
             return False
 
     ### Force/Torque Sensor ###

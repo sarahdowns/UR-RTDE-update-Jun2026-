@@ -5,6 +5,8 @@ from move_xyz_safe import UR5eSafeController
 # System Configuration
 IP_ADDRESS = "192.168.5.5"
 
+TILT = 45
+
 def print_telemetry():
     print("\n[INIT] Connecting to UR5e Controller...")
     
@@ -37,7 +39,7 @@ def print_telemetry():
         
         # --- 3. SPATIAL DATA (TILTED WORLD FRAME) ---
         # Apply your 45-degree Ry tilt to see where the robot thinks it is relative to the table
-        T_world_base = SE3.Ry(np.deg2rad(45))
+        T_world_base = SE3.Ry(np.deg2rad(TILT))
         tcp_base_h = np.array([tcp_base[0], tcp_base[1], tcp_base[2], 1.0])
         tcp_world = T_world_base.A @ tcp_base_h
         

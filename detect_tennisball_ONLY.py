@@ -16,7 +16,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 CAPTURE_INTERVAL = 1.0     # seconds
-TOTAL_DURATION = 60.0     # seconds
+TOTAL_DURATION = 1200.0    # seconds
 
 def detect_tennis_ball_center(hsv_image):
     lower = np.array([38, 140, 140])
@@ -60,7 +60,7 @@ def capture_tennis_ball_xyz():
     last_capture_time = 0
 
     print("[INFO] Capturing tennis ball XYZ data...")
-    print("[INFO] Duration: 10 minutes | Interval: 1 second")
+    print("[INFO] Duration: {TOTAL_DURATION} seconds | Interval: {CAPTURE_INTERVAL} second")
 
     with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)

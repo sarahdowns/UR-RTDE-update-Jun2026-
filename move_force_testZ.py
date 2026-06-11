@@ -12,13 +12,13 @@ from gripper_RG2 import RG2
 ip = "192.168.5.5"
 rg_id = 0
 TOUCH_FORCE_THRESHOLD = 7.0    # Stop immediately if force changes by more than 7 Newtons
-DESCENT_SPEED = -0.03          # Move downward at a very slow, safe 3 cm/s
+DESCENT_SPEED = -0.05          # Move downward at a very slow, safe 3 cm/s
 MAX_DESCENT_DISTANCE = 0.30    # Maximum distance (meters) to search before aborting
 ROLL_DEG = 90    # +90 rotates counter-clockwise around the X-axis
-PITCH_DEG = 180  # Keep baseline pitch pointing down (adjust if needed)
-YAW_DEG = 0
+PITCH_DEG = -90  # Keep baseline pitch pointing down (adjust if needed)
+YAW_DEG = 90
 
-gripper_open = 45
+gripper_open = 20
 gripper_closed = 20
 gripper_force = 25
 
@@ -35,7 +35,7 @@ def main():
     
     try:
         # 1. Establish a safe starting position above the suspected table height
-        hover_x, hover_y, hover_z = 0.3, -0.68, 0.2
+        hover_x, hover_y, hover_z = 0.1, -0.7, 0.3
         print(f"[STAGE 1] Moving to safe baseline hover height: Z = {hover_z}m")
         robot.move_to_xyz_safe(hover_x, hover_y, hover_z, visualize=False, speed=0.1, roll_deg=ROLL_DEG, pitch_deg=PITCH_DEG)
         time.sleep(1.0) # Wait for mechanical oscillations to settle completely
@@ -98,6 +98,7 @@ def main():
                 print("TABLE TOP CONTACT DETECTED!")
                 print("="*40)
                 print(f"Delta Contact Force: {delta_force_z:.2f} N")
+                print(f"Contact Position (Base Z): {current_pose[2]:.4f} m") # <--- ADDED PRINT STATEMENT
                 print("="*40 + "\n")
                 break
             
@@ -112,14 +113,14 @@ def main():
             rg_gripper.rg_grip(60, 25.0)
             time.sleep(1.0) # Allow physical jaws to open completely
             
-            # Step B: Retract 2cm straight up in the World Frame (using Native Controller Math)
+            # Step B: Retract 10cm straight up in the World Frame (using Native Controller Math)
             print("[SAFE] Retracting 10cm in +Z (World Frame)...")
             
-            # We want to move +0.02m in the World Z. Rotate this vector back to the Base frame.
+            # We want to move +0.10m in the World Z. Rotate this vector back to the Base frame.
             Delta_World = np.array([0.0, 0.0, 0.1])
             Delta_Base = R_world_base.T @ Delta_World
             
-            # Copy the exact recorded pose and apply the 2cm spatial shift
+            # Copy the exact recorded pose and apply the 10cm spatial shift
             target_pose = list(recorded_base_pose)
             target_pose[0] += Delta_Base[0]
             target_pose[1] += Delta_Base[1]
