@@ -1,4 +1,4 @@
-# File name: test_move_setpoint.py
+# File name: test_move_setpoint.pyy
 # Target movement. Set elbow up or down preference
 
 from move_xyz_safe import UR5eSafeController
@@ -10,7 +10,7 @@ ip = "192.168.5.5"
 rg_id = 0
 
 # Set to "up", "down", or None (for shortest path)
-ELBOW_PREFERENCE = "up" 
+ELBOW_PREFERENCE = "down" 
 
 def main():
     print("[INIT] Connecting to UR5e Safe Controller...")
