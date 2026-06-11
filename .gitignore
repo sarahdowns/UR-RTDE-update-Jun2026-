@@ -6,8 +6,8 @@ bin
 .idea
 .vscode
 .eggs
-.csv
-.png
+*.csv
+*.png
 include/ur_rtde/rtde_control_script.h
 include/ur_rtde/rtde_export.h
 debian/.debhelper
