@@ -353,7 +353,7 @@ def main():
                                ask_user=False, async_move=False)
         
         # Search for Socket edge 
-        found_x, found_y = translate_until_contact_x(robot, LATERAL_SPEED, downward_force=3.0)
+        found_x, found_y = translate_until_contact_x(robot, LATERAL_SPEED, downward_force=2.0)
         print(f"\n[PHASE 3] Initiating blind lateral search in -X direction...")                 
         
         #target_x_world = found_x - delta_x
