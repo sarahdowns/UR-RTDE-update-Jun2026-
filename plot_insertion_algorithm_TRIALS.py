@@ -18,9 +18,9 @@ FORCE_LIMIT_XY = 20.0
 
 # --- Depth Thresholds for Color Coding (in mm) ---
 # Based on the 5mm (0.005m) socket depth from the robotic script
-DEPTH_FULL_SUCCESS = 120    # >= 4.0 mm = Green (Full Insertion)
-DEPTH_PARTIAL_SUCCESS = 50 # 1.0 to 4.0 mm = Yellow (Partial Entry / Wedged)
-                            # < 1.0 mm = Red (Surface Jam)
+DEPTH_FULL_SUCCESS = 120.0   # >= 120 mm = Green (Full Insertion)
+DEPTH_PARTIAL_SUCCESS = 50.0 # 50 to 120 mm = Yellow (Partial Entry / Wedged)
+                             # < 50 mm = Red (Surface Jam)
 
 def main():
     if not os.path.exists(CSV_FILE):
@@ -38,8 +38,18 @@ def main():
     total_tests = len(test_ids)
     print(f"[INFO] Found {total_tests} individual test runs.")
 
+    # --- Calculate Derived Metrics ---
     # Convert Z-coordinates to Relative Depth (mm)
-    df['Depth_mm'] = (SOCKET_SURFACE_Z - df['World_Z'] - df['Rod_Length_m']) * 1000.0
+    # 0 = Lip of the socket. Positive = Inside the socket. Negative = Hovering above.
+    
+    # Calculate the true position of the peg tip (Gripper Z minus Rod Length)
+    if 'Rod_Length_m' in df.columns:
+        tip_z = df['World_Z'] - df['Rod_Length_m']
+    else:
+        tip_z = df['World_Z'] # Fallback just in case
+
+    # Calculate how far the TIP has penetrated past the socket surface
+    df['Depth_mm'] = (SOCKET_SURFACE_Z - tip_z) * 1000.0
 
     # ==========================================
     # SET UP 2x4 DASHBOARD GRID
@@ -74,12 +84,12 @@ def main():
         
         max_depth_mm = test_data['Depth_mm'].max()
         
-        # Categorize Yield for Color Coding
-        if max_depth_mm <= DEPTH_FULL_SUCCESS:
+        # Categorize Yield for Color Coding (Fixed to >=)
+        if max_depth_mm >= DEPTH_FULL_SUCCESS:
             line_color = '#2ca02c'  # Green
             alpha_val = 0.5
             full_count += 1
-        elif max_depth_mm <= DEPTH_PARTIAL_SUCCESS:
+        elif max_depth_mm >= DEPTH_PARTIAL_SUCCESS:
             line_color = '#ffc107'  # Yellow/Gold
             alpha_val = 0.8
             part_count += 1
@@ -89,12 +99,12 @@ def main():
             jam_count += 1
         
         # Row 0: Z, X, Y against TIME
-        ax_z_time.plot(test_data['Time_s'], test_data['Force_Z_N'].abs(), color=line_color, alpha=alpha_val, linewidth=1.5)
-        ax_x.plot(test_data['Time_s'], test_data['Force_X_N'], color=line_color, alpha=alpha_val, linewidth=1.5)
-        ax_y.plot(test_data['Time_s'], test_data['Force_Y_N'], color=line_color, alpha=alpha_val, linewidth=1.5)
+        ax_z_time.plot(test_data['Time_s'], test_data['Force_Z_N'].abs(), color=line_color, alpha=alpha_val, linestyle='none', marker='.', markersize=4)
+        ax_x.plot(test_data['Time_s'], test_data['Force_X_N'], color=line_color, alpha=alpha_val, linestyle='none', marker='.', markersize=4)
+        ax_y.plot(test_data['Time_s'], test_data['Force_Y_N'], color=line_color, alpha=alpha_val, linestyle='none', marker='.', markersize=4)
 
         # Row 1: Z-Force against Z-POSITION (Depth)
-        ax_z_pos.plot(test_data['Depth_mm'], test_data['Force_Z_N'].abs(), color=line_color, alpha=alpha_val, linewidth=1.5)
+        ax_z_pos.plot(test_data['Depth_mm'], test_data['Force_Z_N'].abs(), color=line_color, alpha=alpha_val, linestyle='none', marker='.', markersize=4)
         
         # Map: Plot the final XY resting position for this run
         final_pt = test_data.loc[test_data['Depth_mm'].idxmax()]
@@ -147,9 +157,9 @@ def main():
     ax_z_time.set_xlim(left=0)
     ax_z_time.grid(True, linestyle=':', alpha=0.7)
     
-    custom_lines = [Line2D([0], [0], color='#2ca02c', lw=3),
-                    Line2D([0], [0], color='#ffc107', lw=3),
-                    Line2D([0], [0], color='#d62728', lw=3)]
+    custom_lines = [Line2D([0], [0], color='#2ca02c', marker='.', linestyle='none', markersize=12),
+                    Line2D([0], [0], color='#ffc107', marker='.', linestyle='none', markersize=12),
+                    Line2D([0], [0], color='#d62728', marker='.', linestyle='none', markersize=12)]
     ax_z_time.legend(custom_lines, [
         f'Full Insertion (>= {DEPTH_FULL_SUCCESS} mm)', 
         f'Partial Wedge ({DEPTH_PARTIAL_SUCCESS}-{DEPTH_FULL_SUCCESS} mm)', 

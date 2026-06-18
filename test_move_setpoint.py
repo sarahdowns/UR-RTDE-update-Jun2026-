@@ -23,7 +23,7 @@ def main():
         robot.zero_ft_sensor()
         
         # Hardcoded targets
-        x, y, z = -0.07, -0.6, .2
+        x, y, z = .1, -0.6, .2
         pitch_deg = 0
         roll_deg = -90
         yaw_deg = 90

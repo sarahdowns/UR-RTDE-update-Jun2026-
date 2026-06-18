@@ -29,7 +29,14 @@ def main():
     # --- Calculate Derived Metrics ---
     # Convert Z-coordinates to Relative Depth (mm)
     # 0 = Lip of the socket. Positive = Inside the socket. Negative = Hovering above.
-    df['Depth_mm'] = (SOCKET_SURFACE_Z - df['World_Z']) * 1000.0
+    # Calculate the true position of the peg tip (Gripper Z minus Rod Length)
+    if 'Rod_Length_m' in df.columns:
+        tip_z = df['World_Z'] - df['Rod_Length_m']
+    else:
+        tip_z = df['World_Z'] # Fallback just in case
+
+    # Calculate how far the TIP has penetrated past the socket surface
+    df['Depth_mm'] = (SOCKET_SURFACE_Z - tip_z) * 1000.0
     
     phases = df['Phase'].unique()
     

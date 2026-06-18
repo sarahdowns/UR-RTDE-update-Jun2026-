@@ -1,7 +1,7 @@
 # Author: Sarah Downs
 # File name: move_insertion_algorithm_TRIALS.py
-# This script executes a blind tactile search. It auto-calibrates the rod length 
-# on the first plunge, then uses that measurement for subsequent safe hovers and searches. Records data to csv
+# This script executes a blind tactile search. It auto-calibrates the rod length on the first plunge, then 
+# uses that measurement for subsequent safe hovers and searches. Records data to csv
 
 import time
 import os
@@ -16,8 +16,8 @@ rg_id = 0
 
 GRIPPER_OPEN = 60.0         # mm
 GRIPPER_CLOSED = 15.0       # mm
-GRIPPER_FORCE = 80.0        # N
-GRIPPER_COMPLIANCE = 20.5     # mm
+GRIPPER_FORCE = 50.0        # N
+GRIPPER_COMPLIANCE = 20.5   # mm
 GRIPPER_COMP_FORCE = 5.0   # N
 
 # --- Kinematic & Orientation Parameters ---
@@ -38,10 +38,11 @@ LOG_INTERVAL = 1.0 / LOG_RATE_HZ
 # --- Environmental Ground Truths ---
 TABLE_TOP_Z = -0.02  # Hardcoded table height in the 45-deg World Frame
 SAFE_APPROACH_Z = 0.3  # Absolute Gripper Z-height to use BEFORE we know the rod length
-hole_diameter = .02 # meters
-# Position 1 (Initial Starting Point)
+hole_diameter = .03 # meters
+
+# Hardcoded positions for testing without search method
 START_X = 0.1
-START_Y = -0.5978
+START_Y = -0.5984
 
 Socket_start_X = -0.06
 Socket_start_Y = START_Y
@@ -489,7 +490,7 @@ def main():
                               
         print("\n[ACTION] Loosening Gripper...")
         rg_gripper.rg_grip(GRIPPER_COMPLIANCE, GRIPPER_COMP_FORCE)
-        time.sleep(1.0)  
+        time.sleep(1.5)  
                               
         contact_gripper_hole = plunge_until_contact(robot, data_log=global_log, start_time=t_start, phase_label="Phase_2_Seat_in_Hole")
 
